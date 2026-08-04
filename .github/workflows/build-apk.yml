@@ -1,0 +1,58 @@
+name: Build Native Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java for Android
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
+      - name: Install App Dependencies
+        run: npm install
+
+      - name: Build Web App
+        run: npm run build
+
+      # NOTE: Capacitor deps are already declared in package.json and installed
+      # by `npm install` above. Re-installing them here floated them to the
+      # latest major independently of the lockfile.
+
+      - name: Create Native Android Project
+        run: |
+          # `npx cap init` was removed. capacitor.config.ts is committed to the
+          # repo and contains the GoogleAuth plugin block (clientId,
+          # androidClientId, serverClientId, Drive scopes). `cap init`
+          # regenerates that file from scratch, silently dropping the whole
+          # `plugins` section — so every CI-built APK shipped with Google
+          # sign-in and Drive sync broken. The committed config is the source
+          # of truth; we only need to add the platform and sync.
+          npx cap add android
+          npx cap sync android
+
+      - name: Fix Kotlin Duplicate Classes
+        run: |
+          echo "configurations.all { resolutionStrategy { exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'; exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8' } }" >> android/app/build.gradle
+
+      - name: Compile APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK for Download
+        uses: actions/upload-artifact@v4
+        with:
+          name: Roleplay-Vault-App
+          path: android/app/build/outputs/apk/debug/app-debug.apk

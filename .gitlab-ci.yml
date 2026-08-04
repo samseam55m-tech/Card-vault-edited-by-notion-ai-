@@ -1,0 +1,98 @@
+image: ghcr.io/cirruslabs/android-sdk:34
+
+# A new push cancels superseded interruptible jobs, so duplicate pipelines can no
+# longer pile up on the shared runners. On 4 Aug 2026 two jobs built the SAME
+# commit (6f612335) concurrently and burned ~100 runner minutes for zero output.
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+
+variables:
+  # GitLab can only cache paths inside the project directory, so both tools are
+  # redirected there. Without these two lines the cache: block below is a no-op.
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+  npm_config_cache: "$CI_PROJECT_DIR/.npm"
+
+stages:
+  - build
+
+build-apk:
+  stage: build
+  interruptible: true
+  timeout: 40m
+  before_script:
+    # DO NOT REINTRODUCE apt-get HERE.
+    # The android-sdk:34 image already ships curl AND a JDK. The old line
+    #   apt-get update && apt-get install -y curl openjdk-21-jdk
+    # reported "7 upgraded, 0 newly installed" - a pure no-op - while pulling
+    # 132 MB from archive.ubuntu.com at 46-160 kB/s. Measured 4 Aug 2026:
+    # openjdk-21-jdk-headless (82.8 MB) alone took 28.4 min, and two jobs sat in
+    # before_script for 40+ min without ever reaching npm, Vite or Gradle.
+    # Node now comes from the nodejs.org CDN as one file instead.
+    #
+    # java -version runs FIRST on purpose: it proves the image's own JDK is
+    # usable. JAVA_HOME is deliberately NOT hardcoded any more - the old path
+    # /usr/lib/jvm/java-21-openjdk-amd64 only existed because of the apt upgrade.
+    # If Gradle ever cannot find a JDK, derive it rather than hardcoding:
+    #   export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+    - java -version
+    # .tar.gz, not .tar.xz: gzip is always present, xz may not be.
+    - curl -fsSL https://nodejs.org/dist/v20.18.1/node-v20.18.1-linux-x64.tar.gz -o /tmp/node.tar.gz
+    - mkdir -p /opt/node && tar -xzf /tmp/node.tar.gz -C /opt/node --strip-components=1
+    - export PATH=/opt/node/bin:$PATH
+    - node -v && npm -v
+  script:
+    - npm install --legacy-peer-deps
+    - npm install @capacitor/core @capacitor/android @codetrix-studio/capacitor-google-auth --legacy-peer-deps
+    - npm install @capacitor/cli -D --legacy-peer-deps
+    - npm run build
+    - npx cap add android
+    - npx cap sync android
+
+    # --- Inject Google Auth native config into the dynamically generated android folder ---
+
+    # 1. Add server_client_id to strings.xml
+    - sed -i 's|</resources>|    <string name="server_client_id">1037717798765-jscjfdk82phc7sju9jkq53157mik4deg.apps.googleusercontent.com</string>\n</resources>|' android/app/src/main/res/values/strings.xml
+
+    # 2. Add GoogleAuth import
+    - sed -i 's|import com.getcapacitor.BridgeActivity;|import com.getcapacitor.BridgeActivity;\nimport com.codetrixstudio.capacitor.GoogleAuth.GoogleAuth;|' $(find android/app/src/main/java -name MainActivity.java)
+
+    # 3. Add onCreate with registerPlugin
+    - sed -i 's|super.onCreate(savedInstanceState);|super.onCreate(savedInstanceState);\n        registerPlugin(GoogleAuth.class);|' $(find android/app/src/main/java -name MainActivity.java)
+
+    - echo "--- MainActivity.java after injection ---"
+    - cat $(find android/app/src/main/java -name MainActivity.java)
+
+    # --- End Google Auth injection ---
+
+    - "echo 'configurations.all { resolutionStrategy { exclude group: \"org.jetbrains.kotlin\", module: \"kotlin-stdlib-jdk7\"; exclude group: \"org.jetbrains.kotlin\", module: \"kotlin-stdlib-jdk8\" } }' >> android/app/build.gradle"
+    - |
+      if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+        echo "Signing variables detected - building signed release APK"
+        echo "$KEYSTORE_BASE64" | base64 -d > android/app/release-key.jks
+        echo "android.signingConfigs { release { storeFile file(\"release-key.jks\"); storePassword '${KEYSTORE_PASSWORD}'; keyAlias '${KEY_ALIAS}'; keyPassword '${KEY_PASSWORD}' } }" >> android/app/build.gradle
+        echo 'android.buildTypes.release.signingConfig android.signingConfigs.release' >> android/app/build.gradle
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleRelease
+        cp app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/app-signed.apk
+      else
+        echo "WARNING: Signing variables not configured - building debug APK"
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleDebug
+        cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/app-signed.apk
+      fi
+  # android/ is not committed - npx cap add android regenerates it every run, so
+  # Gradle re-downloads its toolchain each build. This cache is the next win now
+  # that apt is gone; it is not what was stalling the jobs.
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - .npm/
+      - .gradle/
+  artifacts:
+    name: "Roleplay-Vault-APK"
+    paths:
+      - android/app/build/outputs/apk/app-signed.apk
+    expire_in: 1 week

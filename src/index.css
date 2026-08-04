@@ -1,0 +1,833 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-main: var(--bg-main);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-surface-hover: var(--bg-surface-hover);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-border-main: var(--border-main);
+  --color-accent: var(--accent);
+}
+
+/* ============================================
+   THEME DEFINITIONS
+   ============================================ */
+@layer base {
+  :root {
+    /* Light Mode (default) */
+    --bg-main: #FFFFFF;
+    --bg-surface: #F5F5F5;
+    --bg-surface-hover: #E5E5E5;
+    --text-main: #1A1A1A;
+    --text-muted: #666666;
+    --border-main: #E5E5E5;
+    --accent: #3B82F6;
+    --safe-top: env(safe-area-inset-top, 28px);
+    --safe-bottom: env(safe-area-inset-bottom, 52px);
+    /* Single source of truth for chrome sizing. Every page must offset its
+       scroll content by these instead of hard-coding pixel guesses like
+       `pt-[72px]`, which is what caused the top bar to cover page content on
+       devices with a punch-hole / large safe-area inset. */
+    --header-h: 56px;
+    --app-header-h: calc(var(--safe-top) + var(--header-h));
+    --bottom-nav-h: 72px;
+    --app-bottom-h: calc(var(--safe-bottom) + var(--bottom-nav-h));
+
+    /* Page content insets.
+       Pages must use these rather than re-deriving chrome offsets from raw
+       pixels. Every overlap bug reported so far came from a hardcoded value
+       drifting out of sync with the chrome it was describing — the list pages
+       assumed an 80px bottom nav while --bottom-nav-h is 72px, so they sat 8px
+       lower than Statistics and Recycle Bin for no reason anyone intended. */
+    --page-toolbar-h: 72px;
+    --page-gap: 16px;
+    --page-pad-top: calc(var(--app-header-h) + var(--page-gap));
+    --page-pad-top-toolbar: calc(var(--app-header-h) + var(--page-toolbar-h) + var(--page-gap));
+    --page-pad-bottom: calc(var(--app-bottom-h) + 24px);
+    /* Stacking order, centralised so panels can never fall under the chrome. */
+    --z-page-header: 90;
+    --z-app-chrome: 100;
+    --z-drawer: 200;
+    --nav-sep-color: rgba(0, 0, 0, 0.1);
+    /* Animation tokens */
+    --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Theme-specific extras */
+    --card-radius: 16px;
+    --card-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    --card-hover-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    --card-border: 1px solid var(--border-main);
+    --card-bg: var(--bg-surface);
+    --chip-radius: 9999px;
+    --btn-radius: 12px;
+    --glass-bg: transparent;
+    --glass-blur: 0px;
+    --glass-border: transparent;
+    --theme-gradient: none;
+    --hero-gradient: linear-gradient(135deg, var(--accent), var(--accent));
+    --hero-text: #FFFFFF;
+    --glow-color: transparent;
+    --particle-display: none;
+    /* Bottom nav */
+    --nav-bg: #1A1A1A;
+    --nav-text: #999999;
+    --nav-active-bg: var(--accent);
+    --nav-active-text: #FFFFFF;
+  }
+
+  .dark {
+    --bg-main: #121318;
+    --bg-surface: #1E1F25;
+    --bg-surface-hover: #2D2E36;
+    --text-main: #E0E0E0;
+    --text-muted: #A0A0A0;
+    --border-main: #2D2E36;
+    --accent: #3B82F6;
+    --nav-sep-color: rgba(255, 255, 255, 0.08);
+    --card-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    --card-hover-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    --nav-bg: #1E1F25;
+    --nav-text: #666666;
+  }
+
+  .amoled {
+    --bg-main: #000000;
+    --bg-surface: #0A0A0A;
+    --bg-surface-hover: #1A1A1A;
+    --text-main: #E0E0E0;
+    --text-muted: #888888;
+    --border-main: #1A1A1A;
+    --accent: #3B82F6;
+    --nav-sep-color: rgba(255, 255, 255, 0.15);
+    --card-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    --card-hover-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    --nav-bg: #0A0A0A;
+    --nav-text: #555555;
+  }
+
+  /* Theme 1: Midnight Peach */
+  .midnight-peach {
+    --bg-main: #0D0D0D;
+    --bg-surface: #1A1A1E;
+    --bg-surface-hover: #252528;
+    --text-main: #FAF0E6;
+    --text-muted: #B8A89A;
+    --border-main: #2A2520;
+    --accent: #F4A261;
+    --nav-sep-color: rgba(244, 162, 97, 0.15);
+    --card-radius: 20px;
+    --card-shadow: 0 4px 16px rgba(244, 162, 97, 0.05);
+    --card-hover-shadow: 0 8px 32px rgba(244, 162, 97, 0.12);
+    --glow-color: rgba(244, 162, 97, 0.08);
+    --nav-bg: #1A1A1E;
+    --nav-text: #B8A89A;
+    --nav-active-bg: #F4A261;
+    --nav-active-text: #0D0D0D;
+  }
+
+  /* Theme 2: Liquid Glass */
+  .liquid-glass {
+    --bg-main: #E8E4DF;
+    --bg-surface: rgba(255, 255, 255, 0.45);
+    --bg-surface-hover: rgba(255, 255, 255, 0.65);
+    --text-main: #1A1A2E;
+    --text-muted: #666680;
+    --border-main: rgba(255, 255, 255, 0.35);
+    --accent: #7C5CFC;
+    --nav-sep-color: rgba(124, 92, 252, 0.1);
+    --card-radius: 20px;
+    --card-shadow: 0 8px 32px rgba(0,0,0,0.06);
+    --card-hover-shadow: 0 16px 48px rgba(0,0,0,0.1);
+    --glass-bg: rgba(255, 255, 255, 0.25);
+    --glass-blur: 20px;
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glow-color: rgba(124, 92, 252, 0.08);
+    --theme-gradient: linear-gradient(145deg, #E8E4DF 0%, #D5D0CC 50%, #E0DCD8 100%);
+    --nav-bg: rgba(255, 255, 255, 0.35);
+    --nav-text: #666680;
+    --nav-active-bg: #7C5CFC;
+    --nav-active-text: #FFFFFF;
+  }
+
+  /* Theme 3: Royal Purple */
+  .royal-purple {
+    --bg-main: #F0F0F5;
+    --bg-surface: #FFFFFF;
+    --bg-surface-hover: #F5F3FF;
+    --text-main: #2D3436;
+    --text-muted: #6B7280;
+    --border-main: #E5E7EB;
+    --accent: #6C5CE7;
+    --nav-sep-color: rgba(108, 92, 231, 0.1);
+    --card-radius: 16px;
+    --card-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --card-hover-shadow: 0 8px 32px rgba(108, 92, 231, 0.12);
+    --hero-gradient: linear-gradient(135deg, #5B4DC7, #7B68EE);
+    --hero-text: #FFFFFF;
+    --nav-bg: #FFFFFF;
+    --nav-text: #6B7280;
+    --nav-active-bg: #6C5CE7;
+    --nav-active-text: #FFFFFF;
+  }
+
+  /* Theme 4: Starry Night */
+  .starry-night {
+    --bg-main: #0F0A2E;
+    --bg-surface: rgba(30, 20, 70, 0.6);
+    --bg-surface-hover: rgba(50, 35, 100, 0.5);
+    --text-main: #E8E0F0;
+    --text-muted: #9B8EC0;
+    --border-main: rgba(138, 120, 200, 0.15);
+    --accent: #B8A9E8;
+    --nav-sep-color: rgba(184, 169, 232, 0.1);
+    --card-radius: 16px;
+    --card-shadow: 0 0 15px rgba(138, 120, 200, 0.1);
+    --card-hover-shadow: 0 0 30px rgba(138, 120, 200, 0.18);
+    --glass-bg: rgba(30, 20, 70, 0.6);
+    --glass-blur: 12px;
+    --glass-border: rgba(138, 120, 200, 0.15);
+    --glow-color: rgba(184, 169, 232, 0.06);
+    --particle-display: block;
+    --nav-bg: rgba(30, 20, 70, 0.8);
+    --nav-text: #9B8EC0;
+    --nav-active-bg: #B8A9E8;
+    --nav-active-text: #0F0A2E;
+  }
+
+  /* Fallback if env() not supported */
+  @supports not (padding-top: env(safe-area-inset-top)) {
+    :root {
+      --safe-top: 28px;
+      --safe-bottom: 52px;
+    }
+  }
+
+  body {
+    @apply bg-bg-main text-text-main;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Separation line above Android nav buttons */
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: var(--safe-bottom);
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--nav-sep-color);
+    z-index: 9999;
+    pointer-events: none;
+  }
+
+  /* Theme transition — smooth color changes */
+  html.light, html.dark, html.amoled,
+  html.midnight-peach, html.liquid-glass,
+  html.royal-purple, html.starry-night {
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+/* ============================================
+   THEME-SPECIFIC OVERRIDES
+   ============================================ */
+@layer components {
+  /* Liquid Glass: glassmorphism on surfaces */
+  .liquid-glass .glass-card,
+  .liquid-glass .bg-bg-surface {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .liquid-glass body {
+    background: var(--theme-gradient, var(--bg-main));
+  }
+
+  /* Liquid Glass: holographic shimmer on hover */
+  .liquid-glass .card-shimmer:hover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(124,92,252,0.08), rgba(45,212,191,0.08));
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Starry Night: backdrop blur on surfaces */
+  .starry-night .glass-card,
+  .starry-night .bg-bg-surface {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(138, 120, 200, 0.15);
+  }
+
+  /* Starry Night: floating particles */
+  .starry-night .starry-bg {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .starry-night .starry-bg::before,
+  .starry-night .starry-bg::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .starry-night .starry-bg::before {
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(184,169,232,0.5), transparent),
+      radial-gradient(1.5px 1.5px at 25% 45%, rgba(184,169,232,0.4), transparent),
+      radial-gradient(1px 1px at 40% 15%, rgba(201,160,220,0.5), transparent),
+      radial-gradient(1.5px 1.5px at 55% 65%, rgba(184,169,232,0.3), transparent),
+      radial-gradient(1px 1px at 70% 30%, rgba(201,160,220,0.4), transparent),
+      radial-gradient(1.5px 1.5px at 85% 50%, rgba(184,169,232,0.35), transparent),
+      radial-gradient(1px 1px at 15% 75%, rgba(201,160,220,0.45), transparent),
+      radial-gradient(1.5px 1.5px at 30% 90%, rgba(184,169,232,0.3), transparent),
+      radial-gradient(1px 1px at 60% 85%, rgba(201,160,220,0.4), transparent),
+      radial-gradient(1.5px 1.5px at 90% 10%, rgba(184,169,232,0.5), transparent),
+      radial-gradient(1px 1px at 5% 50%, rgba(201,160,220,0.35), transparent),
+      radial-gradient(1.5px 1.5px at 45% 35%, rgba(184,169,232,0.4), transparent),
+      radial-gradient(1px 1px at 75% 70%, rgba(201,160,220,0.3), transparent),
+      radial-gradient(1.5px 1.5px at 95% 80%, rgba(184,169,232,0.45), transparent),
+      radial-gradient(1px 1px at 20% 60%, rgba(201,160,220,0.35), transparent);
+    animation: starDrift 60s linear infinite;
+  }
+
+  .starry-night .starry-bg::after {
+    background-image:
+      radial-gradient(1px 1px at 8% 12%, rgba(184,169,232,0.4), transparent),
+      radial-gradient(1.5px 1.5px at 22% 38%, rgba(201,160,220,0.35), transparent),
+      radial-gradient(1px 1px at 48% 58%, rgba(184,169,232,0.45), transparent),
+      radial-gradient(1.5px 1.5px at 62% 22%, rgba(201,160,220,0.3), transparent),
+      radial-gradient(1px 1px at 78% 42%, rgba(184,169,232,0.4), transparent);
+    animation: starDrift2 80s linear infinite;
+  }
+
+  @keyframes starDrift {
+    0% { transform: translateY(0) translateX(0); }
+    50% { transform: translateY(-15px) translateX(10px); }
+    100% { transform: translateY(0) translateX(0); }
+  }
+
+  @keyframes starDrift2 {
+    0% { transform: translateY(0) translateX(0); }
+    50% { transform: translateY(10px) translateX(-8px); }
+    100% { transform: translateY(0) translateX(0); }
+  }
+
+  /* Midnight Peach: peach glow on hover */
+  .midnight-peach .card-glow:hover {
+    box-shadow: 0 0 20px rgba(244, 162, 97, 0.1), var(--card-hover-shadow);
+  }
+
+  /* Royal Purple: gradient hero header */
+  .royal-purple .hero-header {
+    background: var(--hero-gradient);
+    color: var(--hero-text);
+  }
+
+  /* Starry Night: button glow pulse */
+  .starry-night .btn-glow {
+    animation: glowPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes glowPulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(184, 169, 232, 0.2); }
+    50% { box-shadow: 0 0 16px rgba(184, 169, 232, 0.35); }
+  }
+}
+
+/* ============================================
+   FAB Button
+   ============================================ */
+@layer components {
+  .fab-button {
+    @apply fixed w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center;
+    /* Must sit below the drawer (200) so the nav drawer covers it. */
+    z-index: 80;
+    bottom: calc(var(--bottom-nav-h) + var(--safe-bottom));
+    right: 16px;
+    animation: fabEntrance 0.4s var(--ease-spring) both;
+    transition: transform 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .fab-button:active {
+    transform: scale(0.92);
+  }
+
+  @keyframes fabEntrance {
+    from {
+      opacity: 0;
+      transform: scale(0) rotate(-45deg);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+  }
+}
+
+/* ============================================
+   PERFORMANCE & TOUCH
+   ============================================ */
+@layer base {
+  button, a, input, select, textarea,
+  [role="button"], [tabindex] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Touch scrolling.
+     NOTE: `scroll-behavior: smooth` used to be set here. It was the main cause
+     of the "chunky / laggy / over-sensitive" scrolling, because it forces every
+     scroll (including finger-driven ones) through an animation curve and fights
+     the platform's native fling physics. Native scrolling is what we want. */
+  [class*="overflow-y-auto"],
+  [class*="overflow-x-auto"],
+  [class*="overflow-auto"] {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* Only opt specific elements into smooth scrolling, never everything. */
+  .scroll-smooth-explicit {
+    scroll-behavior: smooth;
+  }
+
+  /* NOTE: a blanket `will-change: transform, opacity` used to be applied to
+     every element matching [class*="transition"] / [class*="animate"] /
+     [class*="transform"]. With Tailwind that matches almost the entire DOM, so
+     the browser promoted thousands of nodes to their own GPU layers. On mobile
+     that exhausts the compositor's memory budget, which is exactly why icons
+     and label text in the account panel / theme picker rendered as empty
+     outlines. will-change is now applied only where it is genuinely needed. */
+
+  img {
+    /* `content-visibility: auto` was removed: it made images pop in blank and
+       caused scroll-height thrash while scrolling. */
+    max-width: 100%;
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@layer components {
+  /* Button tap effect */
+  .btn-tap,
+  button:not([disabled]) {
+    transition: transform 0.08s var(--ease-out), opacity 0.08s var(--ease-out);
+  }
+  button:not([disabled]):active {
+    transform: scale(0.97);
+    opacity: 0.85;
+  }
+
+  /* Material ripple effect */
+  .ripple-target {
+    position: relative;
+    overflow: hidden;
+  }
+  .ripple-target::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255,255,255,0.15) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .ripple-target:active::after {
+    opacity: 1;
+  }
+
+  /* Card entrance animation with stagger */
+  @keyframes cardFadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  
+  .card-animate {
+    animation: cardFadeIn 0.25s var(--ease-out) both;
+  }
+
+  @keyframes cardFadeOut {
+    to {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+  }
+
+  /* Bottom sheet animation */
+  @keyframes slideUpSheet {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideDownSheet {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(100%); opacity: 0; }
+  }
+
+  /* Backdrop fade */
+  @keyframes backdropFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes backdropFadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  /* Sidebar slide animation */
+  @keyframes sidebarSlideIn {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+  }
+
+  /* Tab crossfade */
+  .tab-crossfade {
+    animation: tabFade 0.2s var(--ease-out);
+  }
+
+  @keyframes tabFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* List reorder transition */
+  .list-item-transition {
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Card lift on press */
+  .card-lift {
+    transition: transform 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
+  }
+  .card-lift:active {
+    transform: translateY(-2px);
+  }
+
+  /* Input focus glow */
+  .input-glow:focus {
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 59, 130, 246), 0.2);
+  }
+
+  /* Dropdown scaleY animation */
+  .dropdown-enter {
+    animation: dropdownEnter 0.2s var(--ease-out);
+    transform-origin: top;
+  }
+
+  @keyframes dropdownEnter {
+    from { transform: scaleY(0); opacity: 0; }
+    to { transform: scaleY(1); opacity: 1; }
+  }
+
+  /* Bounce selection animation for tag chips */
+  @keyframes chipBounce {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  .chip-bounce {
+    animation: chipBounce 0.2s var(--ease-spring);
+  }
+}
+
+/* ============================================
+   GENERAL UI POLISH
+   ============================================ */
+@layer components {
+  .touch-target {
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  input[type="text"],
+  input[type="search"],
+  input[type="date"],
+  textarea,
+  select {
+    border-radius: 12px;
+    transition: box-shadow 0.2s var(--ease-out), border-color 0.2s var(--ease-out);
+  }
+
+  input[type="text"]:focus,
+  input[type="search"]:focus,
+  textarea:focus,
+  select:focus {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    outline: none;
+  }
+
+  .empty-state {
+    @apply flex flex-col items-center justify-center text-center;
+  }
+  .empty-state-icon {
+    @apply w-16 h-16 text-text-muted opacity-30 mb-4;
+  }
+  .empty-state-text {
+    @apply text-text-muted text-sm leading-relaxed;
+  }
+
+  .sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--bg-main);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .sticky-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border-main);
+    opacity: 0.5;
+  }
+
+  /* Header block performance */
+  .header-block-container {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 200px;
+  }
+
+  /* Bottom nav bar — positioning now handled inline in Layout.tsx
+     for the absolute hide-on-scroll architecture */
+  .bottom-nav {
+    /* position/bottom/left/right/z-index handled by inline styles */
+  }
+
+  .bottom-nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  .bottom-nav-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: var(--nav-bg);
+    border-radius: 99px;
+    padding: 6px 8px;
+    width: 100%;
+    gap: 4px;
+    transition: background-color 0.3s ease;
+  }
+
+  /* Liquid Glass specific nav */
+  .liquid-glass .bottom-nav-pill {
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  /* Starry Night specific nav */
+  .starry-night .bottom-nav-pill {
+    background: rgba(30, 20, 70, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(138, 120, 200, 0.15);
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+    border-radius: 99px;
+    color: var(--nav-text);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    min-height: 44px;
+    white-space: nowrap;
+    gap: 8px;
+  }
+
+  .nav-item.active {
+    background: var(--nav-active-bg);
+    color: var(--nav-active-text);
+    padding: 10px 18px;
+    font-weight: 600;
+  }
+
+  .nav-item:active {
+    transform: scale(0.95);
+  }
+
+  .nav-item-label {
+    font-size: 13px;
+    font-weight: 600;
+    overflow: hidden;
+    max-width: 0;
+    opacity: 0;
+    transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, margin-left 0.3s ease;
+  }
+
+  .nav-item.active .nav-item-label {
+    max-width: 100px;
+    opacity: 1;
+  }
+}
+
+/* ============================================
+   ZOOM MODAL - Swipe gestures
+   ============================================ */
+@layer components {
+  .zoom-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: rgba(0, 0, 0, 0.95);
+    display: flex;
+    flex-direction: column;
+    touch-action: none;
+  }
+
+  .zoom-image-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .zoom-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 16px;
+    padding-bottom: calc(16px + var(--safe-bottom));
+  }
+
+  .zoom-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    transition: all 0.3s ease;
+  }
+
+  .zoom-dot.active {
+    width: 24px;
+    border-radius: 4px;
+    background: white;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ============================================
+   ACCOUNT MENU PANEL
+   ============================================ */
+@layer components {
+  .account-menu-panel {
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Scroll containment for slide-over panels (account panel, nav drawer).
+     `overscroll-behavior: contain` stops the scroll chaining that made
+     scrolling inside the account panel also scroll the page behind it. */
+  .panel-scroll {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Liquid Glass theme override */
+  .liquid-glass .account-menu-panel {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.75);
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  /* Starry Night theme override */
+  .starry-night .account-menu-panel {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(15, 10, 46, 0.95);
+    border-left: 1px solid rgba(138, 120, 200, 0.15);
+  }
+
+  /* Midnight Peach theme override */
+  .midnight-peach .account-menu-panel {
+    border-left: 1px solid rgba(244, 162, 97, 0.1);
+  }
+}
+
+/* ============================================
+   THEME TRANSITIONS on all themed properties
+   ============================================ */
+@layer base {
+  /* Theme cross-fade.
+     Previously every element had a transition-property declared at all times,
+     which forced the style engine to track transitions on the whole tree.
+     Now the transition only exists during the ~300ms theme swap. */
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition-property: background-color, border-color, color, box-shadow;
+    transition-duration: 0.3s;
+    transition-timing-function: ease;
+  }
+
+  /* Respect the OS "reduce motion" setting. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
